@@ -9,7 +9,7 @@
 
 <div class="card" style="height: 320px">
     <div class="card-header">
-        <h4>AWS Statistics hihi</h4>
+        <h4>AWS Statistics</h4>
     </div>
     <div class="card-body">
         <div class="chart-wrapper">
