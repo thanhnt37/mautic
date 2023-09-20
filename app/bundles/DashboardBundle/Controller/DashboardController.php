@@ -99,6 +99,25 @@ class DashboardController extends AbstractFormController
             throw new NotFoundHttpException('Not found.');
         }
 
+        if($widgetId === "ses-statistics") {
+            // create new env name `ses_statistics_endpoint` at app/configs/local.php
+            $data = file_get_contents($_ENV['MAUTIC_SES_STATISTICS_ENDPOINT']);
+            $data = json_decode($data, true);
+
+            $response = $this->render(
+                'MauticDashboardBundle:Widget:ses-statistics.html.php',
+                ['data' => $data['body']]
+            );
+
+            return new JsonResponse([
+                'success'      => 1,
+                'widgetId'     => "ses-statistics",
+                'widgetHtml'   => $response->getContent(),
+                'widgetWidth'  => 100,
+                'widgetHeight' => 330,
+            ]);
+        }
+
         /** @var WidgetService $widgetService */
         $widgetService = $this->get('mautic.dashboard.widget');
         $widgetService->setFilter($this->request);
