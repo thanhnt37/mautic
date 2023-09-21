@@ -3,8 +3,10 @@
     $successColor = "#22bb33";
     $warningColor = "#f0ad4e";
     $dangerColor = "#bb2124";
-    $bounceRate = $data['MetricDataResults'][0]['Values'][0] * 100;
-    $color = ($bounceRate < 3) ? $successColor : (($bounceRate < 5) ? $warningColor : $dangerColor);
+    $bounceRate = $data['MetricDataResults'][3]['Values'][0] * 100;
+    $bounceRateColor = ($bounceRate < 3) ? $successColor : (($bounceRate < 5) ? $warningColor : $dangerColor);
+    $complaintRate = $data['MetricDataResults'][4]['Values'][0] * 100;
+    $complaintRateColor = ($complaintRate < 0.05) ? $successColor : (($complaintRate < 0.1) ? $warningColor : $dangerColor);
 ?>
 
 <div class="card" style="height: 320px">
@@ -16,21 +18,33 @@
             <div class="chart-content" style="display: flex; justify-content: space-around;">
                 <div class="item" style="display: flex; flex-direction: column; align-items: center;">
                     <p style="font-size: 64px; border: 1px solid; display: flex; width: 235px; height: 235px; justify-content: center; align-items: center; border-radius: 100%; color: <?php echo $normalColor?>; margin-bottom: 15px;">
-                        <?php echo $data['MetricDataResults'][2]['Values'][0] ?>
+                        <?php echo $data['MetricDataResults'][0]['Values'][0] ?>
                     </p>
-                    <p>Delivery in the recent 2 weeks</p>
+                    <p>Send in the recent 2 weeks</p>
                 </div>
                 <div class="item" style="display: flex; flex-direction: column; align-items: center;">
                     <p style="font-size: 64px; border: 1px solid; display: flex; width: 235px; height: 235px; justify-content: center; align-items: center; border-radius: 100%; color: <?php echo $normalColor?>; margin-bottom: 15px;">
                         <?php echo $data['MetricDataResults'][1]['Values'][0] ?>
                     </p>
+                    <p>Delivery in the recent 2 weeks</p>
+                </div>
+                <div class="item" style="display: flex; flex-direction: column; align-items: center;">
+                    <p style="font-size: 64px; border: 1px solid; display: flex; width: 235px; height: 235px; justify-content: center; align-items: center; border-radius: 100%; color: <?php echo $normalColor?>; margin-bottom: 15px;">
+                        <?php echo $data['MetricDataResults'][2]['Values'][0] ?>
+                    </p>
                     <p>Bounce in the recent 2 weeks</p>
                 </div>
                 <div class="item" style="display: flex; flex-direction: column; align-items: center;">
-                    <p style="font-size: 64px; border: 1px solid; display: flex; width: 235px; height: 235px; justify-content: center; align-items: center; border-radius: 100%; color: <?php echo $color?>; margin-bottom: 15px;">
-                        <?php echo $data['MetricDataResults'][0]['Values'][0] * 100 ?> &percnt;
+                    <p style="font-size: 64px; border: 1px solid; display: flex; width: 235px; height: 235px; justify-content: center; align-items: center; border-radius: 100%; color: <?php echo $bounceRateColor?>; margin-bottom: 15px;">
+                        <?php echo $bounceRate ?> &percnt;
                     </p>
                     <p>Bounce Rate</p>
+                </div>
+                <div class="item" style="display: flex; flex-direction: column; align-items: center;">
+                    <p style="font-size: 64px; border: 1px solid; display: flex; width: 235px; height: 235px; justify-content: center; align-items: center; border-radius: 100%; color: <?php echo $complaintRateColor?>; margin-bottom: 15px;">
+                        <?php echo $complaintRate ?> &percnt;
+                    </p>
+                    <p>Complaint Rate</p>
                 </div>
             </div>
         </div>
