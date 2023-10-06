@@ -332,7 +332,8 @@ class ImportController extends FormController
                                 $fs->mkdir($importDir);
 
                                 $fileData->move($importDir, $fileName);
-
+                                $this->validateFileSyntax($fullPath);
+                                
                                 $file = new \SplFileObject($fullPath);
 
                                 $config = $form->getData();
@@ -760,5 +761,29 @@ class ImportController extends FormController
         $this->container->get('event_dispatcher')->dispatch(LeadEvents::IMPORT_ON_INITIALIZE, $event);
 
         return $event;
+    }
+
+    private function validateFileSyntax($inputFileName): bool
+    {
+        $check = file_exists($inputFileName) ? "true" : "false";
+        error_log("... validateFileSyntax.inputFileName: inputFileName \n", 3, "./var/logs/thanhnt-debug.log");
+        error_log("... validateFileSyntax.file_exists(inputFileName): $check \n", 3, "./var/logs/thanhnt-debug.log");
+        if($check === "false") {
+            error_log("... validateFileSyntax.return FALSE \n", 3, "./var/logs/thanhnt-debug.log");
+            return false;
+        }
+
+        $backupInputFileName = str_replace(".csv", "_input.csv", $inputFileName);
+        $backupOutputFileName = str_replace(".csv", "_output.csv", $inputFileName);
+        $content = file_get_contents($inputFileName);
+        file_put_contents($backupInputFileName, $content);
+
+        $content = preg_replace("/\"(\r?\n|\r)\"/", "\"ATHANH\"", $content);
+        $content = preg_replace("/(\r?\n|\r)/", "", $content);
+        $content = preg_replace("/\"ATHANH\"/", "\"\n\"", $content);
+
+        file_put_contents($inputFileName, $content);
+        file_put_contents($backupOutputFileName, $content);
+        return true;
     }
 }
