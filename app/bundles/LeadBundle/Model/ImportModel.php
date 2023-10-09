@@ -273,6 +273,7 @@ class ImportModel extends FormModel
      */
     public function process(Import $import, Progress $progress, $limit = 0)
     {
+        error_log("..... start process() \n", 3, "./var/logs/thanhnt-debug.log");
         //Auto detect line endings for the file to work around MS DOS vs Unix new line characters
         ini_set('auto_detect_line_endings', '1');
 
@@ -308,6 +309,8 @@ class ImportModel extends FormModel
             $string = $file->current();
             $file->next();
             $data = str_getcsv($string, $config['delimiter'], $config['enclosure'], $config['escape']);
+            error_log("..... data: " . implode(" | ", $data) . " | \n", 3, "./var/logs/thanhnt-debug.log");
+
             $import->setLastLineImported($lineNumber);
 
             // Ignore the header row
@@ -339,6 +342,9 @@ class ImportModel extends FormModel
                 }
 
                 $data = array_combine($headers, $data);
+                $emailVerification = $this->verifyEmail($data['email']);
+                $emailVerification = json_decode($emailVerification);
+                $data['email_verification'] = $emailVerification->status;
 
                 try {
                     $event = new ImportProcessEvent($import, $eventLog, $data);
@@ -683,5 +689,20 @@ class ImportModel extends FormModel
             $importId = $import ? '('.$import->getId().')' : '';
             $this->logger->debug(sprintf('IMPORT%s: %s', $importId, $msg));
         }
+    }
+
+    private function verifyEmail($emailAddress)
+    {
+        $curl = curl_init();
+        $url = "https://api.usebouncer.com/v1.1/email/verify?email=$emailAddress";
+
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, ["x-api-key: " . $_ENV['MAUTIC_BOUNCER_API_KEY'], "Accept: application/json"]);
+
+        $result = curl_exec($curl);
+        curl_close($curl);
+
+        return $result;
     }
 }
