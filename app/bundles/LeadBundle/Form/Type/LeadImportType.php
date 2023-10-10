@@ -93,7 +93,7 @@ class LeadImportType extends AbstractType
             ]
         );
 
-        $default = (empty($options['data']['batchlimit'])) ? 100 : (int) $options['data']['batchlimit'];
+        $default = (empty($options['data']['batchlimit'])) ? 50 : (int) $options['data']['batchlimit'];
         $builder->add(
             'batchlimit',
             TextType::class,
