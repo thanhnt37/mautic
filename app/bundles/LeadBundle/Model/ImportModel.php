@@ -309,7 +309,6 @@ class ImportModel extends FormModel
             $string = $file->current();
             $file->next();
             $data = str_getcsv($string, $config['delimiter'], $config['enclosure'], $config['escape']);
-            error_log("..... data: " . implode(" | ", $data) . " | \n", 3, "./var/logs/thanhnt-debug.log");
 
             $import->setLastLineImported($lineNumber);
 
@@ -344,12 +343,19 @@ class ImportModel extends FormModel
                 $data = array_combine($headers, $data);
                 $emailVerification = $this->verifyEmail($data['email']);
                 $emailVerification = json_decode($emailVerification);
-                $import->setDefault('tags', [$emailVerification->status]);
+                $defaultTags = $import->getDefault('tags') ? $import->getDefault('tags') : [];
+                $newTags = array_merge($defaultTags, [$emailVerification->status]);
 
                 try {
+                    // mautic use defaultTags to set tags for lead during importing
+                    $import->setDefault('tags', $newTags);
                     $event = new ImportProcessEvent($import, $eventLog, $data);
 
+                    // dispatch event to import current record
                     $this->dispatcher->dispatch(LeadEvents::IMPORT_ON_PROCESS, $event);
+
+                    // reset default tags for next record
+                    $import->setDefault('tags', $defaultTags);
 
                     if ($event->wasMerged()) {
                         $this->logDebug('Entity on line '.$lineNumber.' has been updated', $import);
