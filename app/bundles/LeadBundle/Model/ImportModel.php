@@ -344,7 +344,7 @@ class ImportModel extends FormModel
                 $data = array_combine($headers, $data);
                 $emailVerification = $this->verifyEmail($data['email']);
                 $emailVerification = json_decode($emailVerification);
-                $data['email_verification'] = $emailVerification->status;
+                $import->setDefault('tags', [$emailVerification->status]);
 
                 try {
                     $event = new ImportProcessEvent($import, $eventLog, $data);
