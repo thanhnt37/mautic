@@ -341,10 +341,10 @@ class ImportModel extends FormModel
                 }
 
                 $data = array_combine($headers, $data);
+                // TODO: setup GUI to enable/disable this feature from Configurations
                 $emailVerification = $this->verifyEmail($data['email']);
-                $emailVerification = json_decode($emailVerification);
                 $defaultTags = $import->getDefault('tags') ? $import->getDefault('tags') : [];
-                $newTags = array_merge($defaultTags, [$emailVerification->status]);
+                $newTags = array_merge($defaultTags, [$emailVerification['status']]);
 
                 try {
                     // mautic use defaultTags to set tags for lead during importing
@@ -699,6 +699,12 @@ class ImportModel extends FormModel
 
     private function verifyEmail($emailAddress)
     {
+        if(!$_ENV['MAUTIC_BOUNCER_API_KEY']) {
+            return [
+                "email" => $emailAddress,
+                "status" => "unverified"
+            ];
+        }
         $curl = curl_init();
         $url = "https://api.usebouncer.com/v1.1/email/verify?email=$emailAddress";
 
@@ -709,6 +715,6 @@ class ImportModel extends FormModel
         $result = curl_exec($curl);
         curl_close($curl);
 
-        return $result;
+        return json_decode($result, true);
     }
 }
