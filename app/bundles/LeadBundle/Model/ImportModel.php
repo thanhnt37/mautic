@@ -273,7 +273,6 @@ class ImportModel extends FormModel
      */
     public function process(Import $import, Progress $progress, $limit = 0)
     {
-        error_log("..... start process() \n", 3, "./var/logs/thanhnt-debug.log");
         //Auto detect line endings for the file to work around MS DOS vs Unix new line characters
         ini_set('auto_detect_line_endings', '1');
 
@@ -335,20 +334,34 @@ class ImportModel extends FormModel
             }
 
             if (!$errorMessage) {
+                error_log("...................\n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
                 $data = $this->trimArrayValues($data);
                 if (!array_filter($data)) {
+                    error_log("skip this record, go to continue: " . json_encode($data) . " \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
                     continue;
                 }
 
                 $data = array_combine($headers, $data);
-                // TODO: setup GUI to enable/disable this feature from Configurations
-                $emailVerification = $this->verifyEmail($data['email']);
-                $defaultTags = $import->getDefault('tags') ? $import->getDefault('tags') : [];
-                $newTags = array_merge($defaultTags, [$emailVerification['status']]);
+                error_log("importing data: " . json_encode($data) . " \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
 
+                $defaultTags = $import->getDefault('tags') ? $import->getDefault('tags') : [];
                 try {
+                    // TODO: setup GUI to enable/disable this feature from Configurations
+                    $fields = $import->getMatchedFields();  // [$importField => $leadField]
+                    $fields    = array_flip($fields);       // [$leadField => $importField]
+                    error_log("getMatchedFields() --> " . json_encode($fields) ." \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
+
+                    $importEmailField = $fields['email'];
+                    error_log("importEmailField: $importEmailField \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
+                    error_log("email: " . $data[$importEmailField] . " \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
+
+                    $emailVerification = $this->verifyEmail($data[$importEmailField]);
+                    error_log("emailVerification: " . json_encode($emailVerification) . " \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
+
                     // mautic use defaultTags to set tags for lead during importing
+                    $newTags = array_merge($defaultTags, [$emailVerification['status']]);
                     $import->setDefault('tags', $newTags);
+
                     $event = new ImportProcessEvent($import, $eventLog, $data);
 
                     // dispatch event to import current record
@@ -365,6 +378,9 @@ class ImportModel extends FormModel
                         $import->increaseInsertedCount();
                     }
                 } catch (\Exception $e) {
+                    // reset default tags for next record
+                    $import->setDefault('tags', $defaultTags);
+
                     // Email validation likely failed
                     $errorMessage = $e->getMessage();
                 }
