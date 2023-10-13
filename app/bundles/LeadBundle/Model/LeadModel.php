@@ -1280,7 +1280,10 @@ class LeadModel extends FormModel
      */
     public function import($fields, $data, $owner = null, $list = null, $tags = null, $persist = true, LeadEventLog $eventLog = null, $importId = null, $skipIfExists = false)
     {
+        error_log("........... start: LeadModel.import() ...........\n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
+
         $fields    = array_flip($fields);
+        error_log("fields mapping: " . json_encode($fields) ." \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
         $fieldData = [];
 
         // Extract company data and import separately
@@ -1454,7 +1457,9 @@ class LeadModel extends FormModel
         }
 
         if (null !== $tags) {
-            $this->modifyTags($lead, $tags, null, false);
+            // ThanhNT: update the Tags that related to email_verification
+//            $this->modifyTags($lead, $tags, null, false);
+            $this->modifyTags($lead, $tags, array_diff(["unverified", "undeliverable", "unknown", "risky", "deliverable"], $tags), false);
         }
 
         if (empty($this->leadFields)) {
@@ -1558,6 +1563,7 @@ class LeadModel extends FormModel
             }
         }
 
+        error_log("........... end: LeadModel.import() ...........\n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
         return $merged;
     }
 
