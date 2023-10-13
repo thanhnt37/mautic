@@ -765,11 +765,13 @@ class ImportController extends FormController
 
     private function validateFileSyntax($inputFileName): bool
     {
+        error_log("........... start: validateFileSyntax() ...........\n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
+
         $check = file_exists($inputFileName) ? "true" : "false";
-        error_log("... validateFileSyntax.inputFileName: inputFileName \n", 3, "./var/logs/thanhnt-debug.log");
-        error_log("... validateFileSyntax.file_exists(inputFileName): $check \n", 3, "./var/logs/thanhnt-debug.log");
+        error_log("inputFileName: $inputFileName \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
+        error_log("file_exists(inputFileName): $check \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
         if($check === "false") {
-            error_log("... validateFileSyntax.return FALSE \n", 3, "./var/logs/thanhnt-debug.log");
+            error_log("return FALSE \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
             return false;
         }
 
@@ -784,6 +786,8 @@ class ImportController extends FormController
 
         file_put_contents($inputFileName, $content);
         file_put_contents($backupOutputFileName, $content);
+
+        error_log("........... end: validateFileSyntax() ...........\n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
         return true;
     }
 }
