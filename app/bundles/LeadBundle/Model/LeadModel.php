@@ -1308,6 +1308,7 @@ class LeadModel extends FormModel
 
         $lead   = $lead ?? $this->checkForDuplicateContact($fieldData);
         $merged = (bool) $lead->getId();
+        error_log("email: " . $lead->getEmail() . "\n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
 
         if (!empty($fields['dateAdded']) && !empty($data[$fields['dateAdded']])) {
             $dateAdded = new DateTimeHelper($data[$fields['dateAdded']]);
@@ -1457,9 +1458,7 @@ class LeadModel extends FormModel
         }
 
         if (null !== $tags) {
-            // ThanhNT: update the Tags that related to email_verification
-//            $this->modifyTags($lead, $tags, null, false);
-            $this->modifyTags($lead, $tags, array_diff(["unverified", "undeliverable", "unknown", "risky", "deliverable"], $tags), false);
+            $this->modifyTags($lead, $tags, null, false);
         }
 
         if (empty($this->leadFields)) {

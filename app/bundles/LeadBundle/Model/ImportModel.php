@@ -334,41 +334,17 @@ class ImportModel extends FormModel
             }
 
             if (!$errorMessage) {
-                error_log("...................\n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
                 $data = $this->trimArrayValues($data);
                 if (!array_filter($data)) {
-                    error_log("skip this record, go to continue: " . json_encode($data) . " \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
                     continue;
                 }
 
                 $data = array_combine($headers, $data);
-                error_log("importing data: " . json_encode($data) . " \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
 
-                $defaultTags = $import->getDefault('tags') ? $import->getDefault('tags') : [];
                 try {
-                    // TODO: setup GUI to enable/disable this feature from Configurations
-                    $fields = $import->getMatchedFields();  // [$importField => $leadField]
-                    $fields    = array_flip($fields);       // [$leadField => $importField]
-                    error_log("getMatchedFields() --> " . json_encode($fields) ." \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
-
-                    $importEmailField = $fields['email'];
-                    error_log("importEmailField: $importEmailField \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
-                    error_log("email: " . $data[$importEmailField] . " \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
-
-                    $emailVerification = $this->verifyEmail($data[$importEmailField]);
-                    error_log("emailVerification: " . json_encode($emailVerification) . " \n", 3, "./var/logs/contacts-importing-" . date('Y-m-d') . ".log");
-
-                    // mautic use defaultTags to set tags for lead during importing
-                    $newTags = array_merge($defaultTags, [$emailVerification['status']]);
-                    $import->setDefault('tags', $newTags);
-
                     $event = new ImportProcessEvent($import, $eventLog, $data);
 
-                    // dispatch event to import current record
                     $this->dispatcher->dispatch(LeadEvents::IMPORT_ON_PROCESS, $event);
-
-                    // reset default tags for next record
-                    $import->setDefault('tags', $defaultTags);
 
                     if ($event->wasMerged()) {
                         $this->logDebug('Entity on line '.$lineNumber.' has been updated', $import);
@@ -378,9 +354,6 @@ class ImportModel extends FormModel
                         $import->increaseInsertedCount();
                     }
                 } catch (\Exception $e) {
-                    // reset default tags for next record
-                    $import->setDefault('tags', $defaultTags);
-
                     // Email validation likely failed
                     $errorMessage = $e->getMessage();
                 }
@@ -711,26 +684,5 @@ class ImportModel extends FormModel
             $importId = $import ? '('.$import->getId().')' : '';
             $this->logger->debug(sprintf('IMPORT%s: %s', $importId, $msg));
         }
-    }
-
-    private function verifyEmail($emailAddress)
-    {
-        if(!$_ENV['MAUTIC_BOUNCER_API_KEY']) {
-            return [
-                "email" => $emailAddress,
-                "status" => "unverified"
-            ];
-        }
-        $curl = curl_init();
-        $url = "https://api.usebouncer.com/v1.1/email/verify?email=$emailAddress";
-
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, ["x-api-key: " . $_ENV['MAUTIC_BOUNCER_API_KEY'], "Accept: application/json"]);
-
-        $result = curl_exec($curl);
-        curl_close($curl);
-
-        return json_decode($result, true);
     }
 }
