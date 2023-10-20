@@ -336,15 +336,30 @@ class CampaignSubscriber implements EventSubscriberInterface
 
     public function onCampaignTriggerActionUpdateTags(CampaignExecutionEvent $event)
     {
+        error_log("----------> onCampaignTriggerActionUpdateTags() \n", 3, "./var/logs/campaign-email-verification-" . date('Y-m-d') . ".log");
+
         if (!$event->checkContext('lead.changetags')) {
             return;
         }
 
         $config = $event->getConfig();
         $lead   = $event->getLead();
+        error_log("email: " . json_encode($lead->getEmail()) . " \n", 3, "./var/logs/campaign-email-verification-" . date('Y-m-d') . ".log");
+        error_log("config: " . json_encode($config) . " \n", 3, "./var/logs/campaign-email-verification-" . date('Y-m-d') . ".log");
 
         $addTags    = (!empty($config['add_tags'])) ? $config['add_tags'] : [];
         $removeTags = (!empty($config['remove_tags'])) ? $config['remove_tags'] : [];
+        error_log("addTags 1: " . implode(",", $addTags) . " \n", 3, "./var/logs/campaign-email-verification-" . date('Y-m-d') . ".log");
+        error_log("removeTags 1: " . implode(",", $removeTags) . " \n", 3, "./var/logs/campaign-email-verification-" . date('Y-m-d') . ".log");
+
+        if(in_array("ev_awaiting", $removeTags)) {
+            $emailVerification = $this->verifyEmail($lead->getEmail());
+            error_log("emailVerification: " . json_encode($emailVerification) . " \n", 3, "./var/logs/campaign-email-verification-" . date('Y-m-d') . ".log");
+            $addTags[] = "ev_" . $emailVerification['status'];
+            error_log("addTags 2: " . implode(",", $addTags) . " \n", 3, "./var/logs/campaign-email-verification-" . date('Y-m-d') . ".log");
+            $removeTags = array_merge($removeTags, array_diff(["ev_awaiting", "ev_unverified", "ev_undeliverable", "ev_unknown", "ev_risky", "ev_deliverable"], $addTags));
+            error_log("removeTags 2: " . implode(",", $removeTags) . " \n", 3, "./var/logs/campaign-email-verification-" . date('Y-m-d') . ".log");
+        }
 
         $this->leadModel->modifyTags($lead, $addTags, $removeTags);
 
@@ -529,5 +544,26 @@ class CampaignSubscriber implements EventSubscriberInterface
         }
 
         return $this->fields;
+    }
+
+    private function verifyEmail($emailAddress)
+    {
+        if(!$_ENV['MAUTIC_BOUNCER_API_KEY']) {
+            return [
+                "email" => $emailAddress,
+                "status" => "unverified"
+            ];
+        }
+        $curl = curl_init();
+        $url = "https://api.usebouncer.com/v1.1/email/verify?email=$emailAddress";
+
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, ["x-api-key: " . $_ENV['MAUTIC_BOUNCER_API_KEY'], "Accept: application/json"]);
+
+        $result = curl_exec($curl);
+        curl_close($curl);
+
+        return json_decode($result, true);
     }
 }
