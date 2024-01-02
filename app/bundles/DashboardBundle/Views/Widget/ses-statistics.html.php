@@ -4,6 +4,7 @@
     $warningColor = "#f0ad4e";
     $dangerColor = "#bb2124";
     $bounceRate = $data['MetricDataResults'][3]['Values'][0] * 100;
+    $bounceRate = round($bounceRate,2);
     $bounceRateColor = ($bounceRate < 3) ? $successColor : (($bounceRate < 5) ? $warningColor : $dangerColor);
     $complaintRate = $data['MetricDataResults'][4]['Values'][0] * 100;
     $complaintRateColor = ($complaintRate < 0.05) ? $successColor : (($complaintRate < 0.1) ? $warningColor : $dangerColor);
